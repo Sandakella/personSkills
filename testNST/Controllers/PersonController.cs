@@ -27,10 +27,10 @@ namespace testNST.Controllers
             return persons.Select(personMapper.PersonToPersonDto);
         }
 
-        [HttpGet("{id}", Name = "GetPSItem")]
-        public IActionResult Get(int Id)
+        [HttpGet("{id}")]
+        public IActionResult Get(int id)
         {
-            var personItem = PersonRepository.Get(Id);
+            var personItem = PersonRepository.Get(id);
 
             if (personItem == null)
             {
@@ -60,15 +60,15 @@ namespace testNST.Controllers
             return Ok(person);
         }
 
-        [HttpPut]
-        public IActionResult PutPerson([FromBody] PersonDto updatedPersonDto)
+        [HttpPut("{personId}")]
+        public IActionResult PutPerson(long personId, [FromBody] PersonDto updatedPersonDto)
         {
             if (updatedPersonDto == null)
             {
                 return BadRequest();
             }
             var updatedPerson = personMapper.PersonDtoToPerson(updatedPersonDto);
-            PersonRepository.PutPerson(updatedPerson);
+            PersonRepository.PutPerson(personId, updatedPerson);
             return Ok(updatedPersonDto);
         }
 

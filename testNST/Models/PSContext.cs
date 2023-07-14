@@ -11,8 +11,8 @@ namespace testNST.Models
         public PSContext(DbContextOptions<PSContext> options) : base(options)
         {
         }
-        public DbSet<Person> Persons { get; set; }
-        public DbSet<Skill> Skills { get; set; }
+        public DbSet<Person> Person { get; set; }
+        public DbSet<Skill> Skill { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Person>().HasMany(c => c.Skills);

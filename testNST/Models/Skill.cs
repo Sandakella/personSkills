@@ -17,8 +17,8 @@ namespace testNST.Models
 
         [Required(ErrorMessage = "Введите уровень навыка")]
         [Range(1, 10, ErrorMessage = "Уровень навыка должен находиться в диапазоне от 1 до 10")]
-        public byte Level { get; set; }
+        public int Level { get; set; }
         
-        public Person Person { get; set; }
+        //public Person Person { get; set; }
     }
 }
