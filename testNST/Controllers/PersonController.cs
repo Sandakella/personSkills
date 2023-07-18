@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using testNST.Dtos;
 using testNST.Mappers;
 using testNST.Models;
@@ -10,79 +9,68 @@ namespace testNST.Controllers
     [ApiController]
     public class PersonController : ControllerBase
     {
-        readonly IPersonRepository PersonRepository;
+        private readonly IPersonRepository _personRepository;
 
-        public PersonMapper personMapper;
+        private readonly PersonMapper _personMapper;
 
-        public PersonController(IPersonRepository psRepository)
+        public PersonController(IPersonRepository personRepository)
         {
-            PersonRepository = psRepository;
-            personMapper = new PersonMapper();
-        }
-
-        [HttpGet(Name = "GetAllItems")]
-        public IEnumerable<PersonDto> Get()
-        {
-            var persons = PersonRepository.Get();
-            return persons.Select(personMapper.PersonToPersonDto);
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult Get(int id)
-        {
-            var personItem = PersonRepository.Get(id);
-
-            if (personItem == null)
-            {
-                return NotFound();
-            }
-            var personDto = personMapper.PersonToPersonDto(personItem);
-
-            return new ObjectResult(personDto);
-        }
-
-        [HttpPost]
-        public IActionResult PostPerson([FromBody] PersonDto dto)
-        {
-            if (dto == null)
-            {
-                return BadRequest();
-            }
-            foreach (var skillchar in dto.Skills)
-            {
-                if (skillchar.SkillName == "" || double.IsNaN(skillchar.Level))
-                {
-                    return BadRequest();
-                }
-            }
-            var person = personMapper.PersonDtoToPerson(dto);
-            PersonRepository.PostPerson(person);
-            return Ok(person);
-        }
-
-        [HttpPut("{personId}")]
-        public IActionResult PutPerson(long personId, [FromBody] PersonDto updatedPersonDto)
-        {
-            if (updatedPersonDto == null)
-            {
-                return BadRequest();
-            }
-            var updatedPerson = personMapper.PersonDtoToPerson(updatedPersonDto);
-            PersonRepository.PutPerson(personId, updatedPerson);
-            return Ok(updatedPersonDto);
+            _personRepository = personRepository;
+            _personMapper = new PersonMapper();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var deletedPersonItem = PersonRepository.Delete(id);
+            var deletedPerson = await _personRepository.Delete(id);
 
-            if (deletedPersonItem == null)
-            {
+            return Ok(deletedPerson);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Get()
+        {
+            var persons = await _personRepository.Get();
+            var personDtos = persons.Select(_personMapper.PersonToPersonDto).ToList();
+
+            return Ok(personDtos);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Get(int id)
+        {
+            var person = await _personRepository.Get(id);
+
+            if (person == null)
+                return NotFound();
+
+            var personDto = _personMapper.PersonToPersonDto(person);
+
+            return Ok(personDto);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PostPerson([FromBody] PersonDto? dto)
+        {
+            if (dto == null || dto.Skills.Any(skill => skill.SkillName == "" || double.IsNaN(skill.Level)))
                 return BadRequest();
-            }
 
-            return new ObjectResult(deletedPersonItem);
+            var person = new Person();
+            _personMapper.PersonDtoToPerson(dto, person);
+            await _personRepository.PostPerson(person);
+
+            return Ok(person);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutPerson(long id, [FromBody] PersonDto? updatedPersonDto)
+        {
+            if (updatedPersonDto == null)
+                return BadRequest();
+
+            await _personRepository.PutPerson(id, updatedPersonDto);
+
+            return Ok(updatedPersonDto);
         }
     }
 }
