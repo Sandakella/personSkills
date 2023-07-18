@@ -1,68 +1,72 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using testNST.Dtos;
+using testNST.Mappers;
 using testNST.Models;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace testNST
 {
     public class PersonRepository : IPersonRepository
     {
-        private readonly PSContext Context;
-        public IEnumerable<Person> Get()
+        private readonly PSContext _context;
+
+        private readonly PersonMapper _personMapper;
+
+        public PersonRepository(PSContext context, PersonMapper personMapper)
         {
-            IEnumerable<Person> persons = Context.Person.Include(q => q.Skills);
-            return persons;
-        }
-        public Person Get(long id)
-        {
-            return Context.Person.Include(q => q.Skills).FirstOrDefault(q => q.Id == id);
-        }
-        public PersonRepository(PSContext context)
-        {
-            Context = context;
-        }
-        public void PostPerson(Person item)
-        {
-            Context.Person.Add(item);
-            foreach (var skill in item.Skills)
-            {
-                Context.Skill.Add(skill);
-            }
-            Context.SaveChanges();
+            _context = context;
+            _personMapper = personMapper;
         }
 
-        public void PutPerson(long personId, Person updatedPerson)
+        public async Task<Person?> Delete(long id)
         {
-            Person currentItem = Context.Person.Include(q => q.Skills).FirstOrDefault(w => w.Id == personId);
-            currentItem.Name = updatedPerson.Name;
-            currentItem.DisplayName = updatedPerson.DisplayName;
-            foreach (var skill in currentItem.Skills)
-            {
-                Skill updatedSkill = Context.Skill.FirstOrDefault(q => q.SkillName == skill.SkillName && q.PersonId == skill.PersonId);
-                if (updatedSkill == null)
-                {
-                    Skill newSkill = new Skill() { PersonId = skill.PersonId, SkillName = skill.SkillName, Level = skill.Level };
-                }
-                else
-                {
-                    updatedSkill.Level = skill.Level;
-                }
-            }
-            Context.Person.Update(currentItem);
-            Context.SaveChanges();
-        }
+            var person = await Get(id);
 
-        public Person Delete(long id)
-        {
-            Person person = Get(id);
+            if (person == null)
+                return person;
 
-            if (person != null)
+            foreach (var skill in person.Skills)
             {
-                Context.Person.Remove(person);
-                Context.SaveChanges();
+                _context.Skill.Remove(skill);
             }
+            _context.Person.Remove(person);
+            await _context.SaveChangesAsync();
 
             return person;
+        }
+
+        public async Task<List<Person>> Get()
+        {
+            var persons = await _context.Person
+                .Include(x => x.Skills)
+                .ToListAsync();
+
+            return persons;
+        }
+
+        public async Task<Person?> Get(long id)
+        {
+            return await _context.Person
+                .Include(x => x.Skills)
+                .FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+        public async Task PostPerson(Person person)
+        {
+            _context.Person.Add(person);
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task PutPerson(long personId, PersonDto updatedPersonDto)
+        {
+            var person = await Get(personId);
+            if (person != null)
+            {
+                PersonMapper.PersonDtoToPerson(updatedPersonDto, person);
+
+                _context.Person.Update(person);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

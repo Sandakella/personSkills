@@ -1,14 +1,14 @@
-﻿using testNST.Models;
-using System.Collections.Generic;
+﻿using testNST.Dtos;
+using testNST.Models;
 
 namespace testNST
 {
     public interface IPersonRepository
     {
-        IEnumerable<Person> Get();
-        Person Get(long id);
-        void PostPerson(Person item);
-        void PutPerson(long personId, Person item);
-        Person Delete(long id);
+        Task<Person?> Delete(long id);
+        Task<List<Person>> Get();
+        Task<Person?> Get(long id);
+        Task PostPerson(Person person);
+        Task PutPerson(long id, PersonDto item);
     }
 }
